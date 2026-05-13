@@ -41,4 +41,32 @@ const signUp = async (req, res) => {
   }
 };
 
-module.exports = { signUp };
+const verifyOtp = async (req, res) => {
+  const { email, otp } = req.body;
+  try {
+    if (!otp) return res.status(400).send({ message: "OTP Code is required" });
+    const userData = await userSchema.findOneAndUpdate(
+      { email, otp, otpExpiry: { $gt: Date.now() }, isVerified: false },
+      {
+        $set: {
+          isVerified: true,
+          otp: null,
+          otpExpiry: null,
+        },
+      },
+      {
+        returnDocument: "after",
+      },
+    );
+    if (!userData) {
+      return res.status(400).send({ message: "Invalid Request" });
+    }
+   
+    res.status(200).send({ message: "Email verified successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ message: "Internal Server Error." });
+  }
+};
+
+module.exports = { signUp, verifyOtp};

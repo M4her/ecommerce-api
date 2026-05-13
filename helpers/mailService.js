@@ -6,11 +6,11 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: {
-    user: "maher44hmed@gmail.com",
+    user: process.env.Mail,
      pass: process.env.Google,
   },
 });
-console.log("Password check:", process.env.Goggle);
+
 
 
 const mailSender = async ({ email, subject, template }) => {
