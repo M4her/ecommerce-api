@@ -69,4 +69,27 @@ const verifyOtp = async (req, res) => {
   }
 };
 
-module.exports = { signUp, verifyOtp};
+
+const resendOtp = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const userData = await userSchema.findOne({ email, isVerified: false });
+    if (!userData) return res.status(400).send({ message: "Invalid Request" });
+
+    const otp = generateOTP();
+    userData.otp = otp;
+    userData.otpExpiry = Date.now() + 5 * 60 * 1000;
+    await userData.save();
+    mailSender({
+      email,
+      subject: "Verify your OTP",
+      template: OTPMailTemp(otp),
+    });
+
+    res.status(200).send({ message: "New OTP sent to your email" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ message: "Internal Server Error." });
+  }
+};
+module.exports = { signUp, verifyOtp, resendOtp};
