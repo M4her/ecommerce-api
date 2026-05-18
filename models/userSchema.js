@@ -45,6 +45,7 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.pre("save", async function () {
+  // Only hash if password is modified or new
   if (!this.isModified("password")) return;
   try {
     const saltRounds = 10;

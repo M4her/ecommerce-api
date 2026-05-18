@@ -1,12 +1,28 @@
 const express = require("express");
-const { signUp, verifyOtp, resendOtp, signIn, getProfile } = require("../controllers/authControllers");
+const multer = require("multer");
+const upload = multer();
+const {
+  signUp,
+  verifyOtp,
+  resendOtp,
+  signIn,
+  getProfile,
+  updateProfile,
+  userList,
+} = require("../controllers/authControllers");
 const { authMiddleware } = require("../middlewares/authMiddleware");
 const route = express.Router();
 
 route.post("/signup", signUp);
 route.post("/verify-email", verifyOtp);
-route.post("/resend-otp", resendOtp)
-route.post("/signin", signIn)
+route.post("/resend-otp", resendOtp);
+route.post("/signin", signIn);
 route.get("/getprofile", authMiddleware, getProfile);
+route.put(
+  "/updateprofile",
+  authMiddleware,
+  upload.single("avatar"),
+  updateProfile,
+);
 
 module.exports = route;
