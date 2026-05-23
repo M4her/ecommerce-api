@@ -6,5 +6,7 @@ route.get("/", (req, res) => {
 });
 
 route.use("/auth", require("./authRoute"))
+route.use("/category", require("./categoryRoute"))
+
 
 module.exports = route;
