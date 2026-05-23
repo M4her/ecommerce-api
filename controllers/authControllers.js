@@ -100,7 +100,6 @@ const resendOtp = async (req, res) => {
 const cookie_config = {
   httpOnly: false, // Not accessible by client side JS
   secure: false, // Only sent over HTTPS
-  // sameSite: 'Strict' // Only send for same site requests
 };
 
 const signIn = async (req, res) => {
@@ -132,7 +131,7 @@ const getProfile = async (req, res) => {
   try {
     const profileData = await userSchema.findOne(
       { _id: req.user._id },
-      { fullName: 1, email: 1, role: 1, avatar: 1,  address: 1 },
+      { fullName: 1, email: 1, role: 1, avatar: 1, address: 1 },
     );
     if (!profileData)
       return res.status(400).send({ message: "Invalid request" });
@@ -143,7 +142,6 @@ const getProfile = async (req, res) => {
     res.status(500).send({ message: "Internal Server Error." });
   }
 };
-
 
 const updateProfile = async (req, res) => {
   const { fullName, address } = req.body;
@@ -171,4 +169,34 @@ const updateProfile = async (req, res) => {
     res.status(500).send({ message: "Internal Server Error." });
   }
 };
-module.exports = { signUp, verifyOtp, resendOtp, signIn, getProfile,updateProfile };
+
+const userList = async (req, res) => {
+  const { verified } = req.query || "";
+
+  const filterQueries = {};
+
+  if (verified && verified.toLowerCase() != "all") {
+    filterQueries.isVerified = verified === "true";
+  }
+
+  try {
+    const users = await userSchema.find(filterQueries, {
+      fullName: 1,
+      email: 1,
+      role: 1,
+      avatar: 1,
+      isVerified: 1,
+    });
+    res.status(200).send(users);
+  } catch (error) {}
+};
+
+module.exports = {
+  signUp,
+  verifyOtp,
+  resendOtp,
+  signIn,
+  getProfile,
+  updateProfile,
+  userList,
+};

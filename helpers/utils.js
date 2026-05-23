@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const { cloudinary } = require("../configs/cloudinaryConfig");
+const  cloudinary  = require("../configs/cloudinaryConfig");
 function isValidEmail(email) {
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailPattern.test(email);
