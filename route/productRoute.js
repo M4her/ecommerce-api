@@ -1,11 +1,15 @@
 const { Router } = require("express");
+const multer = require("multer");
+const upload = multer();
 const { authMiddleware, roleCheck } = require("../middlewares/authMiddleware");
 const { createProduct } = require("../controllers/productController");
 const route = Router();
 
 route.post(
   "/create",
-  authMiddleware, roleCheck(["admin", "moderator"]),
+  authMiddleware,
+  roleCheck(["admin", "moderator"]),
+  upload.fields([{ name: 'thumbnail', maxCount: 1 }, { name: 'images', maxCount: 4 }]),
   createProduct,
 );
 

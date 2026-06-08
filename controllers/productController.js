@@ -1,3 +1,7 @@
+const { uploadToCloudinary } = require("../helpers/utils");
+const categorySchema = require("../models/categorySchema");
+const productSchema = require("../models/productSchema");
+
 const createProduct = async (req, res) => {
   try {
     const {
@@ -11,6 +15,9 @@ const createProduct = async (req, res) => {
       tags,
       isActive,
     } = req.body;
+
+    const thumbnail = req.files?.thumbnail;
+    const images = req.files?.images;
 
     if (!title)
       return res.status(400).send({ message: "Product title is required" });
@@ -34,10 +41,13 @@ const createProduct = async (req, res) => {
 
     // Validation of product variants
 
-    const variantsData = variants;
+    // This json data is temporary for postman, will be changed when connecting FrontEnd.
+    const variantsData = JSON.parse(variants);
 
     if (!Array.isArray(variantsData) || variantsData.length === 0)
-      return res.status(400).send({ message: "Minimum 1 variant is required." });
+      return res
+        .status(400)
+        .send({ message: "Minimum 1 variant is required." });
 
     for (const variant of variantsData) {
       if (!variant.sku)
@@ -47,13 +57,55 @@ const createProduct = async (req, res) => {
       if (!variant.size)
         return res.status(400).send({ message: "Size is required." });
       if (!variant.stock || variant.stock < 1)
-        return res.status(400).send({ message: "Stock is required and must be more then 0" });
+        return res
+          .status(400)
+          .send({ message: "Stock is required and must be more then 0" });
     }
 
     const skus = variantsData.map((v) => v.sku);
     if (new Set(skus).size !== skus.length)
       return res.status(400).send({ message: "SUK must unique" });
-  } catch (error) {}
+
+    // Image validation and upload
+
+    if (!thumbnail || thumbnail.length === 0)
+      return res.status(400).send({ message: "Product thumbnail is required" });
+    if (!images || images.length === 0)
+      return res.status(400).send({ message: "Product images are required" });
+
+    const thumbnailUrl = await uploadToCloudinary({
+      mimetype: thumbnail[0].mimetype,
+      imgBuffer: thumbnail[0].buffer,
+    });
+
+    const imgsRes = images.map(async (item) => {
+      return uploadToCloudinary({
+        mimetype: item.mimetype,
+        imgBuffer: item.buffer,
+      });
+    });
+    const imagesUrls = await Promise.all(imgsRes);
+
+    const productData = await productSchema.create({
+      title,
+      slug,
+      description,
+      category,
+      price,
+      discountPercentage,
+      variants: variantsData,
+      tags,
+      isActive,
+      thumbnail: thumbnailUrl,
+      images: imagesUrls,
+    });
+
+    res
+      .status(200)
+      .send({ message: "Product Created Successfully", productData });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 module.exports = { createProduct };
