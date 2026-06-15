@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const  cloudinary  = require("../configs/cloudinaryConfig");
+const cloudinary = require("../configs/cloudinaryConfig");
 function isValidEmail(email) {
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailPattern.test(email);
@@ -8,6 +8,21 @@ function isValidEmail(email) {
 
 const generateOTP = () => {
   return crypto.randomInt(1000, 10000).toString();
+};
+
+const generateResetPassToken = () => {
+  const resetToken = crypto.randomBytes(16).toString("hex");
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  return { resetToken, hashedToken };
+};
+
+const hashResetToken = (token) => {
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+  return hashedToken;
 };
 
 const generateAccessToken = (user) => {
@@ -51,4 +66,13 @@ const destroyFromCloudinary = (url) => {
   });
 };
 
-module.exports = { isValidEmail, generateOTP, generateAccessToken, generateRefreshToken, uploadToCloudinary, destroyFromCloudinary };
+module.exports = {
+  isValidEmail,
+  generateOTP,
+  generateAccessToken,
+  generateRefreshToken,
+  uploadToCloudinary,
+  destroyFromCloudinary,
+  generateResetPassToken,
+  hashResetToken,
+};

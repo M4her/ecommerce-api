@@ -7,6 +7,8 @@ const {
   generateRefreshToken,
   uploadToCloudinary,
   destroyFromCloudinary,
+  generateResetPassToken,
+  hashResetToken,
 } = require("../helpers/utils");
 const userSchema = require("../models/userSchema");
 
@@ -91,6 +93,69 @@ const resendOtp = async (req, res) => {
     });
 
     res.status(200).send({ message: "New OTP sent to your email" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ message: "Internal Server Error." });
+  }
+};
+
+const forgetPass = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).send({ message: "Email is required." });
+    if (!isValidEmail(email))
+      return res.status(400).send({ message: "Email is not valid." });
+
+    const existUser = await userSchema.findOne({ email });
+    if (!existUser)
+      return res.status(400).send({ message: "Email Not Found!" });
+
+    // Generate reset password token
+
+    const { resetToken, hashedToken } = generateResetPassToken();
+    existUser.resetToken = hashedToken;
+    existUser.resetTokenExpiry = Date.now() + 2 * 60 * 1000;
+    existUser.save();
+
+    const resetPassUrl = `${process.env.CLIENT_URL || "http://localhost:5173"}/reset-password/${resetToken}`;
+    console.log(resetPassUrl);
+
+    // Send to mail
+    mailSender({
+      email,
+      subject: "Password Reset",
+      template: OTPMailTemp(resetPassUrl),
+    });
+
+    res.status(200).send({ message: "Check your email to set new password" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ message: "Internal Server Error." });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { newpass } = req.body;
+    const { token } = req.params;
+    if (!newpass)
+      return res.status(400).send({ message: "Password is required!" });
+    if (!token) return res.status(400).send({ message: "Invalid request" });
+
+    const generateHashedToken = hashResetToken(token);
+
+    const userData = await userSchema.findOne({
+      resetToken: generateHashedToken,
+      resetTokenExpiry: { $gt: Date.now() },
+    });
+
+    if (!userData) return res.status(400).send({ message: "Invalid request" });
+
+    userData.password = newpass;
+    userData.resetToken = null;
+    userData.resetTokenExpiry = null;
+    userData.save();
+    res.status(200).send({ message: "Password Updated Successfully!" });
   } catch (error) {
     console.log(error);
     res.status(500).send({ message: "Internal Server Error." });
@@ -217,4 +282,6 @@ module.exports = {
   getProfile,
   updateProfile,
   userList,
+  forgetPass,
+  resetPassword,
 };
